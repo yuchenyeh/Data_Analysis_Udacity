@@ -1,0 +1,87 @@
+
+<html>
+<div id="chartContainer">
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="http://dimplejs.org/dist/dimple.v2.2.0.min.js"></script>
+ <script type="text/javascript">
+    var svg = dimple.newSvg("#chartContainer", 1000, 500);
+    d3.csv("titanic_data.csv", function (data) {
+      // Create a base chart.  This will provide the base axes and the
+      // chart positioning.
+      var myChart = new dimple.chart(svg, data);
+      myChart.setBounds(60, 30, 850, 400)
+      // Create a matrix by the 2 dimensions
+      var xlabel = "AgeGroup"
+      var ylabel = "Sex"
+      var x = myChart.addCategoryAxis("x", xlabel);
+      var y = myChart.addCategoryAxis("y", ylabel);
+      // Define the natural order for AgeGroup
+      x.addOrderRule(["Infant", "Toddler", "Child", "Teenager", "Young Adult",
+        "Adult","Middle-Age","Senior","Unknown"]);
+      // Adjust axis font size
+      x.fontSize = "12px";
+      y.fontSize = "12px";
+      // Add the bar series to create the matrix shapes
+      var s = myChart.addSeries("Hide", dimple.plot.bar);
+      // Hide this series
+      myChart.assignColor("Hide", "#fff", "#fff", 0);
+      // The bar gap here will define the gaps between the charts
+      s.barGap = 0.4;
+      // Remove the click event from the master chart
+      s.addEventHandler("mouseover", function (e) {});
+    
+      // Draw the main chart
+      myChart.draw();
+
+      // Remove the axis shapes from the main chart
+      x.shapes.selectAll("path,line").remove();
+      x.titleShape.remove();
+      y.shapes.selectAll("path,line").remove();
+      y.titleShape.remove();
+
+      //Iterate the shapes from the parent chart
+      s.shapes.each(function (d) {
+
+        // Filter the data set for Sex and AgeGroup
+        // of the current shape
+        var filteredData = dimple.filterData(data, xlabel, d.xField);
+        filteredData = dimple.filterData(filteredData, ylabel, d.yField);
+
+        // Draw a new chart which will go in the current shape
+        var subChart = new dimple.chart(svg, filteredData);
+
+        // Get the shape from the main chart on which this chart is based
+        var shape = d3.select(this);
+
+        // Position the chart inside the shape
+        subChart.setBounds(
+            parseFloat(shape.attr("x") ),
+            parseFloat(shape.attr("y") ),
+            parseFloat(shape.attr("width")),
+            parseFloat(shape.attr("height")));
+
+         subChart.defaultColors = [
+         new dimple.color("Green"), 
+         new dimple.color("Red")
+       ];
+        // Add the axes with a standard mekko configuration
+        var subX = subChart.addAxis("x",["Sex", "AgeGroup"]);
+        subX.hidden = true;
+        var myLegend = subChart.addLegend(10, 10, 300, 200);
+        
+        var subY = subChart.addPctAxis("y", "Percentage");
+        subY.fontSize = "7px";
+        subY.title ="";
+       
+        // appear in the tooltip
+        var subS = subChart.addSeries("Survival",
+            dimple.plot.bar); 
+        subS.addOrderRule(["Survived", "Perished"]);
+       
+        // Draw the sub chart
+        subChart.draw();
+      }); 
+    });
+  </script>
+</div>
+</html>
